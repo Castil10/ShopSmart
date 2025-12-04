@@ -12,11 +12,13 @@ public partial class FrmPrincipal : Form
 {
     private readonly Usuario _usuario;
     private readonly BDConexion _conexion;
+    private readonly bool _puedeAdministrarUsuarios;
 
     public FrmPrincipal(Usuario usuario, BDConexion conexion)
     {
         _usuario = usuario;
         _conexion = conexion;
+        _puedeAdministrarUsuarios = !_usuario.Rol.Equals("Vendedor", StringComparison.OrdinalIgnoreCase);
         InitializeComponent();
         ConfigurarDashboard();
     }
@@ -39,6 +41,18 @@ public partial class FrmPrincipal : Form
         form.ShowDialog();
     }
 
+    private void AbrirUsuarios()
+    {
+        if (!_puedeAdministrarUsuarios)
+        {
+            MessageBox.Show("Solo administradores o jefes pueden gestionar usuarios.", "Permisos", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        using var form = new FrmUsuarios(_conexion);
+        form.ShowDialog();
+    }
+
     private void ConfigurarDashboard()
     {
         Text = $"ShopSmart - Gestión Retail | Bienvenido {_usuario.NombreUsuario}";
@@ -50,6 +64,7 @@ public partial class FrmPrincipal : Form
         {
             _statusLabel.Text = $"Usuario: {_usuario.NombreUsuario}";
             _dbStatusLabel.Text = _conexion is null ? "DB: No configurada" : "DB: Conectada";
+            _dbStatusLabel.Text += $" | Rol: {_usuario.Rol}";
         }
         catch
         {
@@ -62,9 +77,10 @@ public partial class FrmPrincipal : Form
         _cardsPanel.Controls.Add(CrearCard("Clientes", "Consulta historiales y contactos", () => new FrmClientes(_conexion).ShowDialog()));
         _cardsPanel.Controls.Add(CrearCard("Proveedores", "Organiza tus proveedores", () => new FrmProveedores(_conexion).ShowDialog()));
         _cardsPanel.Controls.Add(CrearCard("Reportes", "Visualiza ventas y alertas de stock", AbrirReportes));
+        _cardsPanel.Controls.Add(CrearCard("Usuarios", "Administra accesos y roles", AbrirUsuarios, !_puedeAdministrarUsuarios));
     }
 
-    private Control CrearCard(string titulo, string descripcion, Action onClick)
+    private Control CrearCard(string titulo, string descripcion, Action onClick, bool deshabilitado = false)
     {
         var card = new Panel
         {
@@ -113,6 +129,16 @@ public partial class FrmPrincipal : Form
 
         actionButton.Click += Accion;
         card.Click += Accion;
+
+        if (deshabilitado)
+        {
+            actionButton.Enabled = false;
+            actionButton.BackColor = Color.FromArgb(189, 189, 189);
+            titleLabel.ForeColor = Color.FromArgb(120, 144, 156);
+            descLabel.ForeColor = Color.FromArgb(144, 164, 174);
+            card.Cursor = Cursors.No;
+            card.Click -= Accion;
+        }
         // Hover effects to improve interactivity
         card.MouseEnter += (_, _) => card.BackColor = Color.FromArgb(250, 250, 250);
         card.MouseLeave += (_, _) => card.BackColor = Color.White;

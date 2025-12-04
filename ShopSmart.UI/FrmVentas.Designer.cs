@@ -21,6 +21,7 @@ public partial class FrmVentas
     private Label _lblProductoTitle = null!;
     private Label _lblClienteTitle = null!;
     private Panel _footerPanel = null!;
+    private FlowLayoutPanel _actionsBar = null!;
 
     private void InitializeComponent()
     {
@@ -41,6 +42,7 @@ public partial class FrmVentas
         _lblClienteTitle = new Label();
         _grid = new DataGridView();
         _footerPanel = new Panel();
+        _actionsBar = new FlowLayoutPanel();
         SuspendLayout();
         //
         // _headerPanel
@@ -90,12 +92,11 @@ public partial class FrmVentas
         // _filtersLayout
         //
         _filtersLayout.BackColor = System.Drawing.Color.White;
-        _filtersLayout.ColumnCount = 6;
-        _filtersLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 160F));
-        _filtersLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120F));
-        _filtersLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 150F));
-        _filtersLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120F));
+        _filtersLayout.ColumnCount = 5;
+        _filtersLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 170F));
         _filtersLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 130F));
+        _filtersLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 180F));
+        _filtersLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Absolute, 120F));
         _filtersLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
         _filtersLayout.RowCount = 2;
         _filtersLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
@@ -109,9 +110,8 @@ public partial class FrmVentas
         _filtersLayout.Controls.Add(_btnBuscar, 1, 1);
         _filtersLayout.Controls.Add(_cmbClientes, 2, 1);
         _filtersLayout.Controls.Add(_numCantidad, 3, 1);
-        _filtersLayout.Controls.Add(_btnAgregar, 4, 1);
-        _filtersLayout.Controls.Add(_btnGuardar, 5, 0);
-        _filtersLayout.Controls.Add(_btnQuitar, 5, 1);
+        _filtersLayout.Controls.Add(_actionsBar, 4, 0);
+        _filtersLayout.SetRowSpan(_actionsBar, 2);
         //
         // _lblProductoTitle
         //
@@ -150,6 +150,20 @@ public partial class FrmVentas
         _numCantidad.Margin = new Padding(0, 2, 8, 0);
         _numCantidad.Width = 110;
         _numCantidad.TextAlign = HorizontalAlignment.Center;
+
+        //
+        // _actionsBar
+        //
+        _actionsBar.FlowDirection = FlowDirection.LeftToRight;
+        _actionsBar.WrapContents = false;
+        _actionsBar.Dock = DockStyle.Fill;
+        _actionsBar.AutoSize = true;
+        _actionsBar.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+        _actionsBar.Padding = new Padding(0);
+        _actionsBar.Anchor = AnchorStyles.Right;
+        _actionsBar.Controls.Add(_btnAgregar);
+        _actionsBar.Controls.Add(_btnGuardar);
+        _actionsBar.Controls.Add(_btnQuitar);
         //
         // _btnBuscar
         //
@@ -178,27 +192,25 @@ public partial class FrmVentas
         // _btnGuardar
         //
         _btnGuardar.Text = "Guardar venta";
-        _btnGuardar.Margin = new Padding(12, 0, 0, 4);
+        _btnGuardar.Margin = new Padding(0, 2, 8, 0);
         _btnGuardar.Padding = new Padding(12, 8, 12, 8);
         _btnGuardar.BackColor = System.Drawing.Color.FromArgb(23, 58, 94);
         _btnGuardar.FlatStyle = FlatStyle.Flat;
         _btnGuardar.FlatAppearance.BorderSize = 0;
         _btnGuardar.ForeColor = System.Drawing.Color.White;
         _btnGuardar.AutoSize = true;
-        _btnGuardar.Anchor = AnchorStyles.Right;
         _btnGuardar.Cursor = Cursors.Hand;
         //
         // _btnQuitar
         //
         _btnQuitar.Text = "Quitar seleccionado";
-        _btnQuitar.Margin = new Padding(12, 0, 0, 2);
+        _btnQuitar.Margin = new Padding(0, 2, 0, 0);
         _btnQuitar.Padding = new Padding(12, 8, 12, 8);
         _btnQuitar.BackColor = System.Drawing.Color.FromArgb(220, 53, 69);
         _btnQuitar.FlatStyle = FlatStyle.Flat;
         _btnQuitar.FlatAppearance.BorderSize = 0;
         _btnQuitar.ForeColor = System.Drawing.Color.White;
         _btnQuitar.AutoSize = true;
-        _btnQuitar.Anchor = AnchorStyles.Right;
         _btnQuitar.Cursor = Cursors.Hand;
         //
         // _grid

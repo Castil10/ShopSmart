@@ -11,17 +11,18 @@ namespace ShopSmart.UI;
 
 public partial class FrmPrincipal : Form
 {
-    private readonly Usuario _usuario;
+    private Usuario _usuario;
     private readonly BDConexion _conexion;
-    private readonly bool _puedeAdministrarUsuarios;
-    private readonly HashSet<string> _modulosPermitidos;
+    private bool _puedeAdministrarUsuarios;
+    private HashSet<string> _modulosPermitidos;
+    private readonly UsersRepository _usersRepository;
 
     public FrmPrincipal(Usuario usuario, BDConexion conexion)
     {
         _usuario = usuario;
         _conexion = conexion;
-        _puedeAdministrarUsuarios = !_usuario.Rol.Equals("Vendedor", StringComparison.OrdinalIgnoreCase);
-        _modulosPermitidos = ObtenerModulosPermitidos(usuario.Rol);
+        _usersRepository = new UsersRepository(conexion);
+        ActualizarPermisos();
         InitializeComponent();
         ConfigurarDashboard();
     }
@@ -98,6 +99,116 @@ public partial class FrmPrincipal : Form
         form.ShowDialog();
     }
 
+    private void ActualizarPermisos()
+    {
+        _puedeAdministrarUsuarios = !_usuario.Rol.Equals("Vendedor", StringComparison.OrdinalIgnoreCase);
+        _modulosPermitidos = ObtenerModulosPermitidos(_usuario.Rol);
+    }
+
+    private void CambiarRol()
+    {
+        var roles = _usersRepository.RolesPermitidos.ToList();
+        using var dialog = new Form
+        {
+            Text = "Cambiar rol",
+            StartPosition = FormStartPosition.CenterParent,
+            FormBorderStyle = FormBorderStyle.FixedDialog,
+            MaximizeBox = false,
+            MinimizeBox = false,
+            ClientSize = new Size(320, 170),
+            BackColor = Color.FromArgb(245, 247, 250)
+        };
+
+        var lbl = new Label
+        {
+            Text = "Selecciona el nuevo rol para esta sesión",
+            AutoSize = false,
+            Dock = DockStyle.Top,
+            Height = 40,
+            TextAlign = ContentAlignment.MiddleLeft,
+            Padding = new Padding(12, 10, 12, 6),
+            ForeColor = Color.FromArgb(55, 71, 79),
+            Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold, GraphicsUnit.Point)
+        };
+
+        var cmbRoles = new ComboBox
+        {
+            Dock = DockStyle.Top,
+            DropDownStyle = ComboBoxStyle.DropDownList,
+            Margin = new Padding(12, 0, 12, 8),
+            Height = 36,
+            Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point)
+        };
+        cmbRoles.DataSource = roles;
+        cmbRoles.SelectedItem = roles.FirstOrDefault(r => r.Equals(_usuario.Rol, StringComparison.OrdinalIgnoreCase));
+
+        var botones = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Bottom,
+            FlowDirection = FlowDirection.RightToLeft,
+            Padding = new Padding(12, 6, 12, 12),
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink
+        };
+
+        var btnAceptar = new Button
+        {
+            Text = "Aplicar", BackColor = Color.FromArgb(23, 58, 94), ForeColor = Color.White,
+            FlatStyle = FlatStyle.Flat, FlatAppearance = { BorderSize = 0 }, AutoSize = true,
+            Padding = new Padding(12, 8, 12, 8), DialogResult = DialogResult.OK
+        };
+        var btnCancelar = new Button
+        {
+            Text = "Cancelar", BackColor = Color.FromArgb(136, 152, 170), ForeColor = Color.White,
+            FlatStyle = FlatStyle.Flat, FlatAppearance = { BorderSize = 0 }, AutoSize = true,
+            Padding = new Padding(12, 8, 12, 8), DialogResult = DialogResult.Cancel
+        };
+
+        botones.Controls.Add(btnCancelar);
+        botones.Controls.Add(btnAceptar);
+
+        dialog.Controls.Add(botones);
+        dialog.Controls.Add(cmbRoles);
+        dialog.Controls.Add(lbl);
+        dialog.AcceptButton = btnAceptar;
+        dialog.CancelButton = btnCancelar;
+
+        if (dialog.ShowDialog(this) != DialogResult.OK)
+        {
+            return;
+        }
+
+        var nuevoRol = cmbRoles.SelectedItem?.ToString();
+        if (string.IsNullOrWhiteSpace(nuevoRol))
+        {
+            return;
+        }
+
+        if (nuevoRol.Equals(_usuario.Rol, StringComparison.OrdinalIgnoreCase))
+        {
+            MessageBox.Show("El usuario ya tiene asignado ese rol.", "Sin cambios", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        var actualizacion = new Usuario
+        {
+            NombreUsuario = _usuario.NombreUsuario,
+            Contrasena = string.Empty,
+            Rol = nuevoRol
+        };
+
+        if (!_usersRepository.TryUpdate(actualizacion, out var error))
+        {
+            MessageBox.Show(error, "No se pudo cambiar el rol", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            return;
+        }
+
+        _usuario.Rol = nuevoRol;
+        ActualizarPermisos();
+        ConfigurarDashboard();
+        MessageBox.Show($"Rol actualizado a '{nuevoRol}'.", "Rol cambiado", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+
     private void ConfigurarDashboard()
     {
         Text = $"ShopSmart - Gestión Retail | Bienvenido {_usuario.NombreUsuario}";
@@ -110,6 +221,7 @@ public partial class FrmPrincipal : Form
             _statusLabel.Text = $"Usuario: {_usuario.NombreUsuario}";
             _dbStatusLabel.Text = _conexion is null ? "DB: No configurada" : "DB: Conectada";
             _dbStatusLabel.Text += $" | Rol: {_usuario.Rol}";
+            _btnCambiarRol.Enabled = _puedeAdministrarUsuarios;
         }
         catch
         {

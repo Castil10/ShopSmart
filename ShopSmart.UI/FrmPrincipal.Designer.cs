@@ -1,5 +1,3 @@
-using ShopSmart.Core.Models;
-using ShopSmart.Data;
 using System.Windows.Forms;
 
 namespace ShopSmart.UI;
@@ -22,26 +20,6 @@ public partial class FrmPrincipal
     private ToolStripStatusLabel _statusLabel = null!;
     private ToolStripStatusLabel _dbStatusLabel = null!;
     private FlowLayoutPanel _cardsPanel = null!;
-
-    public FrmPrincipal(Usuario usuario, BDConexion conexion)
-    {
-        _usuario = usuario;
-        _conexion = conexion;
-
-        InitializeComponent();
-
-        StartPosition = FormStartPosition.CenterScreen;
-        WindowState = FormWindowState.Maximized;
-
-        Text = $"ShopSmart - Panel principal ({_usuario.NombreUsuario})";
-
-        ConstruirDashboard();
-    }
-
-    private void ConstruirDashboard()
-    {
-        throw new NotImplementedException();
-    }
 
     private void InitializeComponent()
     {
@@ -105,9 +83,7 @@ public partial class FrmPrincipal
         _reportesItem.Name = "_reportesItem";
         _reportesItem.Size = new System.Drawing.Size(82, 26);
         _reportesItem.Text = "Reportes";
-        _reportesItem.DropDownItems.Add("Ventas diarias (TODO)");
-        _reportesItem.DropDownItems.Add("Stock bajo (TODO)");
-        _reportesItem.DropDownItems.Add("Productos más vendidos (TODO)");
+        _reportesItem.Click += (_, _) => AbrirReportes();
         //
         // _headerPanel
         //
@@ -123,20 +99,22 @@ public partial class FrmPrincipal
         // _searchBox
         //
         _searchBox.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        _searchBox.Location = new System.Drawing.Point(600, 22);
-        _searchBox.Size = new System.Drawing.Size(200, 28);
-        _searchBox.PlaceholderText = "Buscar productos, clientes...";
+        _searchBox.Location = new System.Drawing.Point(564, 22);
+        _searchBox.Size = new System.Drawing.Size(234, 32);
+        _searchBox.PlaceholderText = "Buscar productos, clientes o reportes";
+        _searchBox.BorderStyle = BorderStyle.FixedSingle;
         //
         // _btnSearch
         //
         _btnSearch.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        _btnSearch.Location = new System.Drawing.Point(808, 20);
-        _btnSearch.Size = new System.Drawing.Size(70, 32);
+        _btnSearch.Location = new System.Drawing.Point(806, 20);
+        _btnSearch.Size = new System.Drawing.Size(82, 36);
         _btnSearch.Text = "Buscar";
         _btnSearch.BackColor = System.Drawing.Color.FromArgb(23, 58, 94);
         _btnSearch.ForeColor = System.Drawing.Color.White;
         _btnSearch.FlatStyle = FlatStyle.Flat;
         _btnSearch.FlatAppearance.BorderSize = 0;
+        _btnSearch.Cursor = Cursors.Hand;
         // _welcomeLabel
         //
         _welcomeLabel.AutoSize = true;

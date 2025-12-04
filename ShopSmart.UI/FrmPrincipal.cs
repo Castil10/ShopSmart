@@ -1,34 +1,108 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
+using System.Linq;
 using System.Windows.Forms;
 using ShopSmart.Core.Models;
 using ShopSmart.Data;
+using ShopSmart.Data.Repositories;
 
 namespace ShopSmart.UI;
 
 public partial class FrmPrincipal : Form
 {
-    private readonly Usuario _usuario;
+    private Usuario _usuario;
     private readonly BDConexion _conexion;
+    private bool _puedeAdministrarUsuarios;
+    private HashSet<string> _modulosPermitidos;
+    private readonly UsersRepository _usersRepository;
 
     public FrmPrincipal(Usuario usuario, BDConexion conexion)
     {
         _usuario = usuario;
         _conexion = conexion;
+        _usersRepository = new UsersRepository(conexion);
+        ActualizarPermisos();
         InitializeComponent();
         ConfigurarDashboard();
     }
 
     private void AbrirProductos()
     {
+        if (!TienePermiso("Productos"))
+        {
+            MostrarAvisoPermisos();
+            return;
+        }
+
         using var form = new FrmProductos(_conexion);
+        form.ShowDialog();
+    }
+
+    private void AbrirClientes()
+    {
+        if (!TienePermiso("Clientes"))
+        {
+            MostrarAvisoPermisos();
+            return;
+        }
+
+        using var form = new FrmClientes(_conexion);
+        form.ShowDialog();
+    }
+
+    private void AbrirProveedores()
+    {
+        if (!TienePermiso("Proveedores"))
+        {
+            MostrarAvisoPermisos();
+            return;
+        }
+
+        using var form = new FrmProveedores(_conexion);
         form.ShowDialog();
     }
 
     private void AbrirVentas()
     {
+        if (!TienePermiso("Ventas"))
+        {
+            MostrarAvisoPermisos();
+            return;
+        }
+
         using var form = new FrmVentas(_conexion);
         form.ShowDialog();
+    }
+
+    private void AbrirReportes()
+    {
+        if (!TienePermiso("Reportes"))
+        {
+            MostrarAvisoPermisos();
+            return;
+        }
+
+        using var form = new FrmReportes(_conexion);
+        form.ShowDialog();
+    }
+
+    private void AbrirUsuarios()
+    {
+        if (!_puedeAdministrarUsuarios)
+        {
+            MessageBox.Show("Solo administradores pueden gestionar usuarios.", "Permisos", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        using var form = new FrmUsuarios(_conexion);
+        form.ShowDialog();
+    }
+
+    private void ActualizarPermisos()
+    {
+        _puedeAdministrarUsuarios = _usuario.Rol.Equals("Administrador", StringComparison.OrdinalIgnoreCase);
+        _modulosPermitidos = ObtenerModulosPermitidos(_usuario.Rol);
     }
 
     private void ConfigurarDashboard()
@@ -42,6 +116,7 @@ public partial class FrmPrincipal : Form
         {
             _statusLabel.Text = $"Usuario: {_usuario.NombreUsuario}";
             _dbStatusLabel.Text = _conexion is null ? "DB: No configurada" : "DB: Conectada";
+            _dbStatusLabel.Text += $" | Rol: {_usuario.Rol}";
         }
         catch
         {
@@ -49,14 +124,35 @@ public partial class FrmPrincipal : Form
         }
 
         _cardsPanel.Controls.Clear();
-        _cardsPanel.Controls.Add(CrearCard("Productos", "Gestiona el catálogo y los precios", AbrirProductos));
-        _cardsPanel.Controls.Add(CrearCard("Ventas", "Registra ventas y calcula totales", AbrirVentas));
-        _cardsPanel.Controls.Add(CrearCard("Clientes", "Consulta historiales y contactos", () => new FrmClientes(_conexion).ShowDialog()));
-        _cardsPanel.Controls.Add(CrearCard("Proveedores", "Organiza tus proveedores", () => new FrmProveedores(_conexion).ShowDialog()));
-        _cardsPanel.Controls.Add(CrearCard("Reportes", "Próximamente métricas y gráficos", () => MessageBox.Show("Reportes en construcción", "Reportes")));
+        AgregarCardSiTienePermiso("Productos", "Gestiona el catálogo y los precios", AbrirProductos);
+        AgregarCardSiTienePermiso("Ventas", "Registra ventas y calcula totales", AbrirVentas);
+        AgregarCardSiTienePermiso("Clientes", "Consulta historiales y contactos", AbrirClientes);
+        AgregarCardSiTienePermiso("Proveedores", "Organiza tus proveedores", AbrirProveedores);
+        AgregarCardSiTienePermiso("Reportes", "Visualiza ventas y alertas de stock", AbrirReportes);
+
+        if (_puedeAdministrarUsuarios && TienePermiso("Usuarios"))
+        {
+            _cardsPanel.Controls.Add(CrearCard("Usuarios", "Administra accesos y roles", AbrirUsuarios));
+        }
+
+        _productosItem.Visible = TienePermiso("Productos");
+        _ventasItem.Visible = TienePermiso("Ventas");
+        _clientesItem.Visible = TienePermiso("Clientes");
+        _proveedoresItem.Visible = TienePermiso("Proveedores");
+        _reportesItem.Visible = TienePermiso("Reportes");
     }
 
-    private Control CrearCard(string titulo, string descripcion, Action onClick)
+    private void AgregarCardSiTienePermiso(string modulo, string descripcion, Action onClick)
+    {
+        if (!TienePermiso(modulo))
+        {
+            return;
+        }
+
+        _cardsPanel.Controls.Add(CrearCard(modulo, descripcion, onClick));
+    }
+
+    private Control CrearCard(string titulo, string descripcion, Action onClick, bool deshabilitado = false)
     {
         var card = new Panel
         {
@@ -105,6 +201,16 @@ public partial class FrmPrincipal : Form
 
         actionButton.Click += Accion;
         card.Click += Accion;
+
+        if (deshabilitado)
+        {
+            actionButton.Enabled = false;
+            actionButton.BackColor = Color.FromArgb(189, 189, 189);
+            titleLabel.ForeColor = Color.FromArgb(120, 144, 156);
+            descLabel.ForeColor = Color.FromArgb(144, 164, 174);
+            card.Cursor = Cursors.No;
+            card.Click -= Accion;
+        }
         // Hover effects to improve interactivity
         card.MouseEnter += (_, _) => card.BackColor = Color.FromArgb(250, 250, 250);
         card.MouseLeave += (_, _) => card.BackColor = Color.White;
@@ -114,33 +220,137 @@ public partial class FrmPrincipal : Form
         return card;
     }
 
+    private bool TienePermiso(string modulo)
+    {
+        return _modulosPermitidos.Contains(modulo);
+    }
+
+    private static HashSet<string> ObtenerModulosPermitidos(string rol)
+    {
+        if (rol.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
+        {
+            return new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "Productos", "Ventas", "Clientes", "Proveedores", "Reportes", "Usuarios"
+            };
+        }
+
+        if (rol.Equals("Jefe", StringComparison.OrdinalIgnoreCase))
+        {
+            return new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "Productos", "Clientes", "Proveedores", "Reportes"
+            };
+        }
+
+        return new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Productos", "Ventas", "Clientes"
+        };
+    }
+
+    private void MostrarAvisoPermisos()
+    {
+        MessageBox.Show("No tienes permisos para acceder a este módulo con tu rol actual.", "Permisos", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+
+    private void CerrarSesion()
+    {
+        Hide();
+        using var login = new FrmLogin(_conexion);
+        login.ShowDialog();
+        Close();
+    }
+
     protected override void OnLoad(EventArgs e)
     {
         base.OnLoad(e);
-        // Simple search handling: quick demo search that opens Productos
+        ConfigurarBusquedaRapida();
+    }
+
+    private void ConfigurarBusquedaRapida()
+    {
         try
         {
-            _btnSearch.Click += (_, __) =>
+            _btnSearch.Click += (_, __) => EjecutarBusqueda();
+            _searchBox.KeyDown += (sender, args) =>
             {
-                var q = _searchBox.Text?.Trim();
-                if (string.IsNullOrEmpty(q))
+                if (args.KeyCode == Keys.Enter)
                 {
-                    _statusLabel.Text = "Ingrese término de búsqueda";
-                    return;
+                    args.Handled = true;
+                    EjecutarBusqueda();
                 }
-
-                if (q.Contains("prod", StringComparison.OrdinalIgnoreCase) || q.Contains("producto", StringComparison.OrdinalIgnoreCase))
-                {
-                    AbrirProductos();
-                    return;
-                }
-
-                _statusLabel.Text = $"No se encontraron resultados para '{q}'";
             };
         }
         catch
         {
             // ignore if controls not available
+        }
+    }
+
+    private void EjecutarBusqueda()
+    {
+        var q = _searchBox.Text?.Trim();
+        if (string.IsNullOrWhiteSpace(q))
+        {
+            _statusLabel.Text = "Ingrese término de búsqueda";
+            return;
+        }
+
+        try
+        {
+            var productosRepo = new ProductosRepository(_conexion);
+            var clientesRepo = new ClientesRepository(_conexion);
+            var proveedoresRepo = new ProveedoresRepository(_conexion);
+
+            var producto = productosRepo.GetAll().FirstOrDefault(p =>
+                p.Codigo.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                p.Nombre.Contains(q, StringComparison.OrdinalIgnoreCase));
+
+            if (producto is not null)
+            {
+                _statusLabel.Text = $"Producto encontrado: {producto.Nombre}";
+                AbrirProductos();
+                return;
+            }
+
+            var cliente = clientesRepo.GetAll().FirstOrDefault(c =>
+                c.Nombre.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                c.Identificacion.Contains(q, StringComparison.OrdinalIgnoreCase));
+            if (cliente is not null)
+            {
+                _statusLabel.Text = $"Cliente encontrado: {cliente.Nombre}";
+                AbrirClientes();
+                return;
+            }
+
+            var proveedor = proveedoresRepo.GetAll().FirstOrDefault(p =>
+                p.Nombre.Contains(q, StringComparison.OrdinalIgnoreCase) ||
+                p.Contacto.Contains(q, StringComparison.OrdinalIgnoreCase));
+            if (proveedor is not null)
+            {
+                _statusLabel.Text = $"Proveedor encontrado: {proveedor.Nombre}";
+                AbrirProveedores();
+                return;
+            }
+
+            if (q.Contains("venta", StringComparison.OrdinalIgnoreCase))
+            {
+                AbrirVentas();
+                return;
+            }
+
+            if (q.Contains("reporte", StringComparison.OrdinalIgnoreCase))
+            {
+                AbrirReportes();
+                return;
+            }
+
+            _statusLabel.Text = $"No se encontraron resultados para '{q}'";
+        }
+        catch (Exception ex)
+        {
+            _statusLabel.Text = $"No se pudo completar la búsqueda: {ex.Message}";
         }
     }
 }

@@ -10,6 +10,8 @@ public partial class FrmLogin
     private TableLayoutPanel _layout = null!;
     private TextBox _txtUsuario = null!;
     private TextBox _txtContrasena = null!;
+    private ComboBox _cmbRol = null!;
+    private Label _lblRol = null!;
     private Button _btnIngresar = null!;
     private CheckBox _chkMostrar = null!;
 
@@ -21,6 +23,8 @@ public partial class FrmLogin
         _layout = new TableLayoutPanel();
         _txtUsuario = new TextBox();
         _txtContrasena = new TextBox();
+        _lblRol = new Label();
+        _cmbRol = new ComboBox();
         _chkMostrar = new CheckBox();
         _btnIngresar = new Button();
         SuspendLayout();
@@ -79,34 +83,75 @@ public partial class FrmLogin
         _layout.Dock = DockStyle.Fill;
         _layout.ColumnCount = 1;
         _layout.Padding = new Padding(24, 16, 24, 24);
-        _layout.RowCount = 4;
+        _layout.RowCount = 8;
         _layout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100F));
+        _layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24F)); // Usuario label
         _layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F)); // Usuario
+        _layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 24F)); // Contraseña label
         _layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F)); // Contraseña
         _layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 30F)); // Mostrar
+        _layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 34F)); // Rol label
+        _layout.RowStyles.Add(new RowStyle(SizeType.Absolute, 40F)); // Rol
         _layout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F)); // Botón
         _layout.Location = new Point(0, _headerPanel.Height);
-        _layout.Controls.Add(_txtUsuario, 0, 0);
-        _layout.Controls.Add(_txtContrasena, 0, 1);
-        _layout.Controls.Add(_chkMostrar, 0, 2);
-        _layout.Controls.Add(_btnIngresar, 0, 3);
+        _layout.Controls.Add(_txtUsuario, 0, 1);
+        _layout.Controls.Add(_txtContrasena, 0, 3);
+        _layout.Controls.Add(_chkMostrar, 0, 4);
+        _layout.Controls.Add(_lblRol, 0, 5);
+        _layout.Controls.Add(_cmbRol, 0, 6);
+        _layout.Controls.Add(_btnIngresar, 0, 7);
 
-        // 
+        //
         // _txtUsuario
-        // 
+        //
         _txtUsuario.Dock = DockStyle.Fill;
         _txtUsuario.Margin = new Padding(0, 0, 0, 6);
         _txtUsuario.PlaceholderText = "Usuario";
         _txtUsuario.Font = new Font("Segoe UI", 10F);
 
-        // 
+        var lblUsuario = new Label
+        {
+            Text = "Usuario",
+            Dock = DockStyle.Fill,
+            ForeColor = Color.FromArgb(55, 71, 79),
+            Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point)
+        };
+        _layout.Controls.Add(lblUsuario, 0, 0);
+
+        //
         // _txtContrasena
-        // 
+        //
         _txtContrasena.Dock = DockStyle.Fill;
         _txtContrasena.Margin = new Padding(0, 0, 0, 6);
         _txtContrasena.PlaceholderText = "Contraseña";
         _txtContrasena.Font = new Font("Segoe UI", 10F);
         _txtContrasena.UseSystemPasswordChar = true;
+
+        var lblContrasena = new Label
+        {
+            Text = "Contraseña",
+            Dock = DockStyle.Fill,
+            ForeColor = Color.FromArgb(55, 71, 79),
+            Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point)
+        };
+        _layout.Controls.Add(lblContrasena, 0, 2);
+
+        //
+        // _lblRol
+        //
+        _lblRol.AutoSize = true;
+        _lblRol.Dock = DockStyle.Fill;
+        _lblRol.Text = "Rol";
+        _lblRol.ForeColor = Color.FromArgb(55, 71, 79);
+        _lblRol.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point);
+
+        //
+        // _cmbRol
+        //
+        _cmbRol.Dock = DockStyle.Fill;
+        _cmbRol.DropDownStyle = ComboBoxStyle.DropDownList;
+        _cmbRol.Margin = new Padding(0, 0, 0, 6);
+        _cmbRol.Font = new Font("Segoe UI", 10F);
 
         // 
         // _chkMostrar

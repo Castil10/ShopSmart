@@ -53,7 +53,7 @@ public class UsersRepository
 
     public bool TryUpdate(Usuario usuario, out string error)
     {
-        if (!Validar(usuario, out error))
+        if (!Validar(usuario, out error, allowEmptyPassword: true))
         {
             return false;
         }
@@ -63,6 +63,11 @@ public class UsersRepository
         {
             error = "Usuario no encontrado.";
             return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(usuario.Contrasena))
+        {
+            usuario.Contrasena = existente.Contrasena;
         }
 
         if (EsUltimoAdministrador(existente) && !usuario.Rol.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
@@ -96,7 +101,7 @@ public class UsersRepository
         return true;
     }
 
-    private bool Validar(Usuario usuario, out string error)
+    private bool Validar(Usuario usuario, out string error, bool allowEmptyPassword = false)
     {
         error = string.Empty;
         if (string.IsNullOrWhiteSpace(usuario.NombreUsuario))
@@ -107,7 +112,15 @@ public class UsersRepository
 
         if (string.IsNullOrWhiteSpace(usuario.Contrasena))
         {
-            error = "La contraseña es obligatoria.";
+            if (!allowEmptyPassword)
+            {
+                error = "La contraseña es obligatoria.";
+                return false;
+            }
+        }
+        else if (usuario.Contrasena.Length < 4)
+        {
+            error = "La contraseña debe tener al menos 4 caracteres.";
             return false;
         }
 

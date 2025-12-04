@@ -45,7 +45,8 @@ public partial class FrmUsuarios : Form
 
     private void GuardarUsuario(string accion)
     {
-        if (!ValidarCampos(out var usuario, out var mensajeError))
+        bool permitiendoContrasenaVacia = accion.Equals("actualizar", StringComparison.OrdinalIgnoreCase);
+        if (!ValidarCampos(out var usuario, out var mensajeError, permitiendoContrasenaVacia))
         {
             MessageBox.Show(mensajeError, "Validación", MessageBoxButtons.OK, MessageBoxIcon.Warning);
             return;
@@ -97,7 +98,7 @@ public partial class FrmUsuarios : Form
         MessageBox.Show("Usuario eliminado", "Información", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
-    private bool ValidarCampos(out Usuario usuario, out string mensajeError)
+    private bool ValidarCampos(out Usuario usuario, out string mensajeError, bool permitirContrasenaVacia = false)
     {
         mensajeError = string.Empty;
         usuario = new Usuario();
@@ -114,11 +115,14 @@ public partial class FrmUsuarios : Form
 
         if (string.IsNullOrWhiteSpace(contrasena))
         {
-            mensajeError = "La contraseña es obligatoria.";
-            return false;
+            if (!permitirContrasenaVacia)
+            {
+                mensajeError = "La contraseña es obligatoria.";
+                return false;
+            }
         }
 
-        if (contrasena.Length < 4)
+        if (!string.IsNullOrWhiteSpace(contrasena) && contrasena.Length < 4)
         {
             mensajeError = "La contraseña debe tener al menos 4 caracteres.";
             return false;

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
@@ -13,30 +14,74 @@ public partial class FrmPrincipal : Form
     private readonly Usuario _usuario;
     private readonly BDConexion _conexion;
     private readonly bool _puedeAdministrarUsuarios;
+    private readonly HashSet<string> _modulosPermitidos;
 
     public FrmPrincipal(Usuario usuario, BDConexion conexion)
     {
         _usuario = usuario;
         _conexion = conexion;
         _puedeAdministrarUsuarios = !_usuario.Rol.Equals("Vendedor", StringComparison.OrdinalIgnoreCase);
+        _modulosPermitidos = ObtenerModulosPermitidos(usuario.Rol);
         InitializeComponent();
         ConfigurarDashboard();
     }
 
     private void AbrirProductos()
     {
+        if (!TienePermiso("Productos"))
+        {
+            MostrarAvisoPermisos();
+            return;
+        }
+
         using var form = new FrmProductos(_conexion);
+        form.ShowDialog();
+    }
+
+    private void AbrirClientes()
+    {
+        if (!TienePermiso("Clientes"))
+        {
+            MostrarAvisoPermisos();
+            return;
+        }
+
+        using var form = new FrmClientes(_conexion);
+        form.ShowDialog();
+    }
+
+    private void AbrirProveedores()
+    {
+        if (!TienePermiso("Proveedores"))
+        {
+            MostrarAvisoPermisos();
+            return;
+        }
+
+        using var form = new FrmProveedores(_conexion);
         form.ShowDialog();
     }
 
     private void AbrirVentas()
     {
+        if (!TienePermiso("Ventas"))
+        {
+            MostrarAvisoPermisos();
+            return;
+        }
+
         using var form = new FrmVentas(_conexion);
         form.ShowDialog();
     }
 
     private void AbrirReportes()
     {
+        if (!TienePermiso("Reportes"))
+        {
+            MostrarAvisoPermisos();
+            return;
+        }
+
         using var form = new FrmReportes(_conexion);
         form.ShowDialog();
     }
@@ -72,12 +117,18 @@ public partial class FrmPrincipal : Form
         }
 
         _cardsPanel.Controls.Clear();
-        _cardsPanel.Controls.Add(CrearCard("Productos", "Gestiona el catálogo y los precios", AbrirProductos));
-        _cardsPanel.Controls.Add(CrearCard("Ventas", "Registra ventas y calcula totales", AbrirVentas));
-        _cardsPanel.Controls.Add(CrearCard("Clientes", "Consulta historiales y contactos", () => new FrmClientes(_conexion).ShowDialog()));
-        _cardsPanel.Controls.Add(CrearCard("Proveedores", "Organiza tus proveedores", () => new FrmProveedores(_conexion).ShowDialog()));
-        _cardsPanel.Controls.Add(CrearCard("Reportes", "Visualiza ventas y alertas de stock", AbrirReportes));
-        _cardsPanel.Controls.Add(CrearCard("Usuarios", "Administra accesos y roles", AbrirUsuarios, !_puedeAdministrarUsuarios));
+        _cardsPanel.Controls.Add(CrearCard("Productos", "Gestiona el catálogo y los precios", AbrirProductos, !TienePermiso("Productos")));
+        _cardsPanel.Controls.Add(CrearCard("Ventas", "Registra ventas y calcula totales", AbrirVentas, !TienePermiso("Ventas")));
+        _cardsPanel.Controls.Add(CrearCard("Clientes", "Consulta historiales y contactos", AbrirClientes, !TienePermiso("Clientes")));
+        _cardsPanel.Controls.Add(CrearCard("Proveedores", "Organiza tus proveedores", AbrirProveedores, !TienePermiso("Proveedores")));
+        _cardsPanel.Controls.Add(CrearCard("Reportes", "Visualiza ventas y alertas de stock", AbrirReportes, !TienePermiso("Reportes")));
+        _cardsPanel.Controls.Add(CrearCard("Usuarios", "Administra accesos y roles", AbrirUsuarios, !_puedeAdministrarUsuarios || !TienePermiso("Usuarios")));
+
+        _productosItem.Enabled = TienePermiso("Productos");
+        _ventasItem.Enabled = TienePermiso("Ventas");
+        _clientesItem.Enabled = TienePermiso("Clientes");
+        _proveedoresItem.Enabled = TienePermiso("Proveedores");
+        _reportesItem.Enabled = TienePermiso("Reportes");
     }
 
     private Control CrearCard(string titulo, string descripcion, Action onClick, bool deshabilitado = false)
@@ -148,6 +199,48 @@ public partial class FrmPrincipal : Form
         return card;
     }
 
+    private bool TienePermiso(string modulo)
+    {
+        return _modulosPermitidos.Contains(modulo);
+    }
+
+    private static HashSet<string> ObtenerModulosPermitidos(string rol)
+    {
+        if (rol.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
+        {
+            return new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "Productos", "Ventas", "Clientes", "Proveedores", "Reportes", "Usuarios"
+            };
+        }
+
+        if (rol.Equals("Jefe", StringComparison.OrdinalIgnoreCase))
+        {
+            return new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "Productos", "Ventas", "Clientes", "Proveedores", "Reportes"
+            };
+        }
+
+        return new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "Productos", "Ventas", "Clientes"
+        };
+    }
+
+    private void MostrarAvisoPermisos()
+    {
+        MessageBox.Show("No tienes permisos para acceder a este módulo con tu rol actual.", "Permisos", MessageBoxButtons.OK, MessageBoxIcon.Information);
+    }
+
+    private void CerrarSesion()
+    {
+        Hide();
+        using var login = new FrmLogin(_conexion);
+        login.ShowDialog();
+        Close();
+    }
+
     protected override void OnLoad(EventArgs e)
     {
         base.OnLoad(e);
@@ -206,7 +299,7 @@ public partial class FrmPrincipal : Form
             if (cliente is not null)
             {
                 _statusLabel.Text = $"Cliente encontrado: {cliente.Nombre}";
-                new FrmClientes(_conexion).ShowDialog();
+                AbrirClientes();
                 return;
             }
 
@@ -216,7 +309,7 @@ public partial class FrmPrincipal : Form
             if (proveedor is not null)
             {
                 _statusLabel.Text = $"Proveedor encontrado: {proveedor.Nombre}";
-                new FrmProveedores(_conexion).ShowDialog();
+                AbrirProveedores();
                 return;
             }
 

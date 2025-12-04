@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Data.SqlClient;
 using ShopSmart.Core.Models;
 
 namespace ShopSmart.Data.Repositories;
@@ -8,30 +9,38 @@ namespace ShopSmart.Data.Repositories;
 public class UsersRepository
 {
     private static readonly string[] _rolesPermitidos = { "Administrador", "Jefe", "Vendedor" };
-
-    private static readonly List<Usuario> _usuarios = new()
-    {
-        new Usuario { NombreUsuario = "admin", Contrasena = "admin", Rol = "Administrador" },
-        new Usuario { NombreUsuario = "jefe", Contrasena = "jefe123", Rol = "Jefe" },
-        new Usuario { NombreUsuario = "ventas", Contrasena = "ventas123", Rol = "Vendedor" }
-    };
+    private readonly BDConexion _conexion;
 
     public UsersRepository(BDConexion conexion)
     {
+        _conexion = conexion;
+        AsegurarAdminPorDefecto();
     }
 
     public IReadOnlyCollection<string> RolesPermitidos => _rolesPermitidos;
 
     public IEnumerable<Usuario> GetAll()
     {
-        return _usuarios.Select(Clone).ToList();
+        const string query = "SELECT NombreUsuario, Contrasena, Rol FROM Usuarios ORDER BY NombreUsuario";
+        using var conn = _conexion.CrearConexion();
+        using var cmd = new SqlCommand(query, conn);
+        conn.Open();
+        using var reader = cmd.ExecuteReader();
+        while (reader.Read())
+        {
+            yield return MapUsuario(reader);
+        }
     }
 
     public Usuario? Get(string username)
     {
-        return _usuarios.FirstOrDefault(u => u.NombreUsuario.Equals(username, StringComparison.OrdinalIgnoreCase)) is { } usuario
-            ? Clone(usuario)
-            : null;
+        const string query = "SELECT NombreUsuario, Contrasena, Rol FROM Usuarios WHERE NombreUsuario = @Nombre";
+        using var conn = _conexion.CrearConexion();
+        using var cmd = new SqlCommand(query, conn);
+        cmd.Parameters.AddWithValue("@Nombre", username);
+        conn.Open();
+        using var reader = cmd.ExecuteReader();
+        return reader.Read() ? MapUsuario(reader) : null;
     }
 
     public bool TryAdd(Usuario usuario, out string error)
@@ -41,13 +50,27 @@ public class UsersRepository
             return false;
         }
 
-        if (_usuarios.Any(u => u.NombreUsuario.Equals(usuario.NombreUsuario, StringComparison.OrdinalIgnoreCase)))
+        const string existeQuery = "SELECT COUNT(*) FROM Usuarios WHERE NombreUsuario = @Nombre";
+        const string insertQuery = "INSERT INTO Usuarios (NombreUsuario, Contrasena, Rol) VALUES (@Nombre, @Contrasena, @Rol)";
+
+        using var conn = _conexion.CrearConexion();
+        using var existeCmd = new SqlCommand(existeQuery, conn);
+        using var insertCmd = new SqlCommand(insertQuery, conn);
+
+        existeCmd.Parameters.AddWithValue("@Nombre", usuario.NombreUsuario);
+        insertCmd.Parameters.AddWithValue("@Nombre", usuario.NombreUsuario);
+        insertCmd.Parameters.AddWithValue("@Contrasena", usuario.Contrasena);
+        insertCmd.Parameters.AddWithValue("@Rol", usuario.Rol);
+
+        conn.Open();
+        var count = (int)(existeCmd.ExecuteScalar() ?? 0);
+        if (count > 0)
         {
             error = "Ya existe un usuario con ese nombre.";
             return false;
         }
 
-        _usuarios.Add(Clone(usuario));
+        insertCmd.ExecuteNonQuery();
         return true;
     }
 
@@ -58,46 +81,71 @@ public class UsersRepository
             return false;
         }
 
-        var existente = _usuarios.FirstOrDefault(u => u.NombreUsuario.Equals(usuario.NombreUsuario, StringComparison.OrdinalIgnoreCase));
-        if (existente is null)
+        const string obtenerQuery = "SELECT NombreUsuario, Contrasena, Rol FROM Usuarios WHERE NombreUsuario = @Nombre";
+        const string updateQuery = "UPDATE Usuarios SET Contrasena = @Contrasena, Rol = @Rol WHERE NombreUsuario = @Nombre";
+        using var conn = _conexion.CrearConexion();
+        using var obtenerCmd = new SqlCommand(obtenerQuery, conn);
+        using var updateCmd = new SqlCommand(updateQuery, conn);
+
+        obtenerCmd.Parameters.AddWithValue("@Nombre", usuario.NombreUsuario);
+        updateCmd.Parameters.AddWithValue("@Nombre", usuario.NombreUsuario);
+        updateCmd.Parameters.AddWithValue("@Rol", usuario.Rol);
+
+        conn.Open();
+        using var reader = obtenerCmd.ExecuteReader();
+        if (!reader.Read())
         {
             error = "Usuario no encontrado.";
             return false;
         }
 
+        var actual = MapUsuario(reader);
+        reader.Close();
+
         if (string.IsNullOrWhiteSpace(usuario.Contrasena))
         {
-            usuario.Contrasena = existente.Contrasena;
+            usuario.Contrasena = actual.Contrasena;
         }
 
-        if (EsUltimoAdministrador(existente) && !usuario.Rol.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
+        if (EsUltimoAdministrador(conn, actual.NombreUsuario) && !usuario.Rol.Equals("Administrador", StringComparison.OrdinalIgnoreCase))
         {
             error = "Debe existir al menos un administrador.";
             return false;
         }
 
-        existente.Contrasena = usuario.Contrasena;
-        existente.Rol = usuario.Rol;
+        updateCmd.Parameters.AddWithValue("@Contrasena", usuario.Contrasena);
+        updateCmd.ExecuteNonQuery();
         return true;
     }
 
     public bool TryDelete(string username, out string error)
     {
         error = string.Empty;
-        var usuario = _usuarios.FirstOrDefault(u => u.NombreUsuario.Equals(username, StringComparison.OrdinalIgnoreCase));
-        if (usuario is null)
+        const string obtenerQuery = "SELECT Rol FROM Usuarios WHERE NombreUsuario = @Nombre";
+        const string deleteQuery = "DELETE FROM Usuarios WHERE NombreUsuario = @Nombre";
+
+        using var conn = _conexion.CrearConexion();
+        using var obtenerCmd = new SqlCommand(obtenerQuery, conn);
+        using var deleteCmd = new SqlCommand(deleteQuery, conn);
+
+        obtenerCmd.Parameters.AddWithValue("@Nombre", username);
+        deleteCmd.Parameters.AddWithValue("@Nombre", username);
+
+        conn.Open();
+        var rol = obtenerCmd.ExecuteScalar()?.ToString();
+        if (rol is null)
         {
             error = "Usuario no encontrado.";
             return false;
         }
 
-        if (EsUltimoAdministrador(usuario))
+        if (rol.Equals("Administrador", StringComparison.OrdinalIgnoreCase) && EsUltimoAdministrador(conn, username))
         {
             error = "No se puede eliminar el último administrador.";
             return false;
         }
 
-        _usuarios.Remove(usuario);
+        deleteCmd.ExecuteNonQuery();
         return true;
     }
 
@@ -133,19 +181,42 @@ public class UsersRepository
         return true;
     }
 
-    private static Usuario Clone(Usuario usuario)
+    private static Usuario MapUsuario(SqlDataReader reader)
     {
         return new Usuario
         {
-            NombreUsuario = usuario.NombreUsuario,
-            Contrasena = usuario.Contrasena,
-            Rol = usuario.Rol
+            NombreUsuario = reader.GetString(0),
+            Contrasena = reader.GetString(1),
+            Rol = reader.GetString(2)
         };
     }
 
-    private static bool EsUltimoAdministrador(Usuario usuario)
+    private static bool EsUltimoAdministrador(SqlConnection conn, string usuarioActual)
     {
-        return usuario.Rol.Equals("Administrador", StringComparison.OrdinalIgnoreCase)
-            && _usuarios.Count(u => u.Rol.Equals("Administrador", StringComparison.OrdinalIgnoreCase)) == 1;
+        const string countAdmins = "SELECT COUNT(*) FROM Usuarios WHERE Rol = 'Administrador' AND NombreUsuario <> @Nombre";
+        using var cmd = new SqlCommand(countAdmins, conn);
+        cmd.Parameters.AddWithValue("@Nombre", usuarioActual);
+        var restantes = (int)(cmd.ExecuteScalar() ?? 0);
+        return restantes == 0;
+    }
+
+    private void AsegurarAdminPorDefecto()
+    {
+        const string query = @"IF NOT EXISTS (SELECT 1 FROM Usuarios WHERE NombreUsuario = 'admin')
+                               BEGIN
+                                   INSERT INTO Usuarios (NombreUsuario, Contrasena, Rol)
+                                   VALUES ('admin', 'admin', 'Administrador')
+                               END";
+        try
+        {
+            using var conn = _conexion.CrearConexion();
+            using var cmd = new SqlCommand(query, conn);
+            conn.Open();
+            cmd.ExecuteNonQuery();
+        }
+        catch
+        {
+            // Evitamos romper el flujo de la UI si la base no está lista.
+        }
     }
 }

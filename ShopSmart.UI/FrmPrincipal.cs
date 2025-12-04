@@ -91,7 +91,7 @@ public partial class FrmPrincipal : Form
     {
         if (!_puedeAdministrarUsuarios)
         {
-            MessageBox.Show("Solo administradores o jefes pueden gestionar usuarios.", "Permisos", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            MessageBox.Show("Solo administradores pueden gestionar usuarios.", "Permisos", MessageBoxButtons.OK, MessageBoxIcon.Information);
             return;
         }
 
@@ -101,112 +101,8 @@ public partial class FrmPrincipal : Form
 
     private void ActualizarPermisos()
     {
-        _puedeAdministrarUsuarios = !_usuario.Rol.Equals("Vendedor", StringComparison.OrdinalIgnoreCase);
+        _puedeAdministrarUsuarios = _usuario.Rol.Equals("Administrador", StringComparison.OrdinalIgnoreCase);
         _modulosPermitidos = ObtenerModulosPermitidos(_usuario.Rol);
-    }
-
-    private void CambiarRol()
-    {
-        var roles = _usersRepository.RolesPermitidos.ToList();
-        using var dialog = new Form
-        {
-            Text = "Cambiar rol",
-            StartPosition = FormStartPosition.CenterParent,
-            FormBorderStyle = FormBorderStyle.FixedDialog,
-            MaximizeBox = false,
-            MinimizeBox = false,
-            ClientSize = new Size(320, 170),
-            BackColor = Color.FromArgb(245, 247, 250)
-        };
-
-        var lbl = new Label
-        {
-            Text = "Selecciona el nuevo rol para esta sesión",
-            AutoSize = false,
-            Dock = DockStyle.Top,
-            Height = 40,
-            TextAlign = ContentAlignment.MiddleLeft,
-            Padding = new Padding(12, 10, 12, 6),
-            ForeColor = Color.FromArgb(55, 71, 79),
-            Font = new Font("Segoe UI Semibold", 10F, FontStyle.Bold, GraphicsUnit.Point)
-        };
-
-        var cmbRoles = new ComboBox
-        {
-            Dock = DockStyle.Top,
-            DropDownStyle = ComboBoxStyle.DropDownList,
-            Margin = new Padding(12, 0, 12, 8),
-            Height = 36,
-            Font = new Font("Segoe UI", 10F, FontStyle.Regular, GraphicsUnit.Point)
-        };
-        cmbRoles.DataSource = roles;
-        cmbRoles.SelectedItem = roles.FirstOrDefault(r => r.Equals(_usuario.Rol, StringComparison.OrdinalIgnoreCase));
-
-        var botones = new FlowLayoutPanel
-        {
-            Dock = DockStyle.Bottom,
-            FlowDirection = FlowDirection.RightToLeft,
-            Padding = new Padding(12, 6, 12, 12),
-            AutoSize = true,
-            AutoSizeMode = AutoSizeMode.GrowAndShrink
-        };
-
-        var btnAceptar = new Button
-        {
-            Text = "Aplicar", BackColor = Color.FromArgb(23, 58, 94), ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat, FlatAppearance = { BorderSize = 0 }, AutoSize = true,
-            Padding = new Padding(12, 8, 12, 8), DialogResult = DialogResult.OK
-        };
-        var btnCancelar = new Button
-        {
-            Text = "Cancelar", BackColor = Color.FromArgb(136, 152, 170), ForeColor = Color.White,
-            FlatStyle = FlatStyle.Flat, FlatAppearance = { BorderSize = 0 }, AutoSize = true,
-            Padding = new Padding(12, 8, 12, 8), DialogResult = DialogResult.Cancel
-        };
-
-        botones.Controls.Add(btnCancelar);
-        botones.Controls.Add(btnAceptar);
-
-        dialog.Controls.Add(botones);
-        dialog.Controls.Add(cmbRoles);
-        dialog.Controls.Add(lbl);
-        dialog.AcceptButton = btnAceptar;
-        dialog.CancelButton = btnCancelar;
-
-        if (dialog.ShowDialog(this) != DialogResult.OK)
-        {
-            return;
-        }
-
-        var nuevoRol = cmbRoles.SelectedItem?.ToString();
-        if (string.IsNullOrWhiteSpace(nuevoRol))
-        {
-            return;
-        }
-
-        if (nuevoRol.Equals(_usuario.Rol, StringComparison.OrdinalIgnoreCase))
-        {
-            MessageBox.Show("El usuario ya tiene asignado ese rol.", "Sin cambios", MessageBoxButtons.OK, MessageBoxIcon.Information);
-            return;
-        }
-
-        var actualizacion = new Usuario
-        {
-            NombreUsuario = _usuario.NombreUsuario,
-            Contrasena = string.Empty,
-            Rol = nuevoRol
-        };
-
-        if (!_usersRepository.TryUpdate(actualizacion, out var error))
-        {
-            MessageBox.Show(error, "No se pudo cambiar el rol", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            return;
-        }
-
-        _usuario.Rol = nuevoRol;
-        ActualizarPermisos();
-        ConfigurarDashboard();
-        MessageBox.Show($"Rol actualizado a '{nuevoRol}'.", "Rol cambiado", MessageBoxButtons.OK, MessageBoxIcon.Information);
     }
 
     private void ConfigurarDashboard()
@@ -221,7 +117,6 @@ public partial class FrmPrincipal : Form
             _statusLabel.Text = $"Usuario: {_usuario.NombreUsuario}";
             _dbStatusLabel.Text = _conexion is null ? "DB: No configurada" : "DB: Conectada";
             _dbStatusLabel.Text += $" | Rol: {_usuario.Rol}";
-            _btnCambiarRol.Enabled = _puedeAdministrarUsuarios;
         }
         catch
         {
@@ -229,18 +124,32 @@ public partial class FrmPrincipal : Form
         }
 
         _cardsPanel.Controls.Clear();
-        _cardsPanel.Controls.Add(CrearCard("Productos", "Gestiona el catálogo y los precios", AbrirProductos, !TienePermiso("Productos")));
-        _cardsPanel.Controls.Add(CrearCard("Ventas", "Registra ventas y calcula totales", AbrirVentas, !TienePermiso("Ventas")));
-        _cardsPanel.Controls.Add(CrearCard("Clientes", "Consulta historiales y contactos", AbrirClientes, !TienePermiso("Clientes")));
-        _cardsPanel.Controls.Add(CrearCard("Proveedores", "Organiza tus proveedores", AbrirProveedores, !TienePermiso("Proveedores")));
-        _cardsPanel.Controls.Add(CrearCard("Reportes", "Visualiza ventas y alertas de stock", AbrirReportes, !TienePermiso("Reportes")));
-        _cardsPanel.Controls.Add(CrearCard("Usuarios", "Administra accesos y roles", AbrirUsuarios, !_puedeAdministrarUsuarios || !TienePermiso("Usuarios")));
+        AgregarCardSiTienePermiso("Productos", "Gestiona el catálogo y los precios", AbrirProductos);
+        AgregarCardSiTienePermiso("Ventas", "Registra ventas y calcula totales", AbrirVentas);
+        AgregarCardSiTienePermiso("Clientes", "Consulta historiales y contactos", AbrirClientes);
+        AgregarCardSiTienePermiso("Proveedores", "Organiza tus proveedores", AbrirProveedores);
+        AgregarCardSiTienePermiso("Reportes", "Visualiza ventas y alertas de stock", AbrirReportes);
 
-        _productosItem.Enabled = TienePermiso("Productos");
-        _ventasItem.Enabled = TienePermiso("Ventas");
-        _clientesItem.Enabled = TienePermiso("Clientes");
-        _proveedoresItem.Enabled = TienePermiso("Proveedores");
-        _reportesItem.Enabled = TienePermiso("Reportes");
+        if (_puedeAdministrarUsuarios && TienePermiso("Usuarios"))
+        {
+            _cardsPanel.Controls.Add(CrearCard("Usuarios", "Administra accesos y roles", AbrirUsuarios));
+        }
+
+        _productosItem.Visible = TienePermiso("Productos");
+        _ventasItem.Visible = TienePermiso("Ventas");
+        _clientesItem.Visible = TienePermiso("Clientes");
+        _proveedoresItem.Visible = TienePermiso("Proveedores");
+        _reportesItem.Visible = TienePermiso("Reportes");
+    }
+
+    private void AgregarCardSiTienePermiso(string modulo, string descripcion, Action onClick)
+    {
+        if (!TienePermiso(modulo))
+        {
+            return;
+        }
+
+        _cardsPanel.Controls.Add(CrearCard(modulo, descripcion, onClick));
     }
 
     private Control CrearCard(string titulo, string descripcion, Action onClick, bool deshabilitado = false)
@@ -330,7 +239,7 @@ public partial class FrmPrincipal : Form
         {
             return new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
-                "Productos", "Ventas", "Clientes", "Proveedores", "Reportes"
+                "Productos", "Clientes", "Proveedores", "Reportes"
             };
         }
 

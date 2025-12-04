@@ -26,9 +26,16 @@ public partial class FrmUsuarios : Form
 
     private void InicializarDatos()
     {
-        _cmbRol.DataSource = _usersRepository.RolesPermitidos.ToList();
-        _cmbRol.SelectedIndex = 0;
-        RefrescarUsuarios();
+        try
+        {
+            _cmbRol.DataSource = _usersRepository.RolesPermitidos.ToList();
+            _cmbRol.SelectedIndex = 0;
+            RefrescarUsuarios();
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"No se pudieron cargar los usuarios: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
     }
 
     private void RefrescarUsuarios()
@@ -52,9 +59,18 @@ public partial class FrmUsuarios : Form
             return;
         }
 
-        bool ok = accion == "agregar"
-            ? _usersRepository.TryAdd(usuario, out mensajeError)
-            : _usersRepository.TryUpdate(usuario, out mensajeError);
+        bool ok;
+        try
+        {
+            ok = accion == "agregar"
+                ? _usersRepository.TryAdd(usuario, out mensajeError)
+                : _usersRepository.TryUpdate(usuario, out mensajeError);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"No se pudo guardar el usuario: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            return;
+        }
 
         if (!ok)
         {
@@ -87,9 +103,17 @@ public partial class FrmUsuarios : Form
             return;
         }
 
-        if (!_usersRepository.TryDelete(usuario, out var error))
+        try
         {
-            MessageBox.Show(error, "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (!_usersRepository.TryDelete(usuario, out var error))
+            {
+                MessageBox.Show(error, "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"No se pudo eliminar el usuario: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             return;
         }
 

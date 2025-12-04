@@ -1,5 +1,3 @@
-using ShopSmart.Core.Models;
-using ShopSmart.Data;
 using System.Windows.Forms;
 
 namespace ShopSmart.UI;
@@ -22,26 +20,6 @@ public partial class FrmPrincipal
     private ToolStripStatusLabel _statusLabel = null!;
     private ToolStripStatusLabel _dbStatusLabel = null!;
     private FlowLayoutPanel _cardsPanel = null!;
-
-    public FrmPrincipal(Usuario usuario, BDConexion conexion)
-    {
-        _usuario = usuario;
-        _conexion = conexion;
-
-        InitializeComponent();
-
-        StartPosition = FormStartPosition.CenterScreen;
-        WindowState = FormWindowState.Maximized;
-
-        Text = $"ShopSmart - Panel principal ({_usuario.NombreUsuario})";
-
-        ConstruirDashboard();
-    }
-
-    private void ConstruirDashboard()
-    {
-        throw new NotImplementedException();
-    }
 
     private void InitializeComponent()
     {

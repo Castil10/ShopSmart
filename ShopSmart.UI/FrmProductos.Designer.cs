@@ -19,6 +19,18 @@ public partial class FrmProductos
     private CheckBox _chkActivo = null!;
     private Button _btnGuardar = null!;
     private Button _btnEliminar = null!;
+    private Panel _codigoPanel = null!;
+    private Panel _nombrePanel = null!;
+    private Panel _precioPanel = null!;
+    private Panel _stockPanel = null!;
+    private Panel _stockMinPanel = null!;
+    private Panel _estadoPanel = null!;
+    private Label _lblCodigo = null!;
+    private Label _lblNombre = null!;
+    private Label _lblPrecio = null!;
+    private Label _lblStock = null!;
+    private Label _lblStockMinimo = null!;
+    private Label _lblEstado = null!;
 
 
     private void InitializeComponent()
@@ -40,6 +52,18 @@ public partial class FrmProductos
         _btnGuardar = new Button();
         _btnEliminar = new Button();
         _grid = new DataGridView();
+        _codigoPanel = new Panel();
+        _nombrePanel = new Panel();
+        _precioPanel = new Panel();
+        _stockPanel = new Panel();
+        _stockMinPanel = new Panel();
+        _estadoPanel = new Panel();
+        _lblCodigo = new Label();
+        _lblNombre = new Label();
+        _lblPrecio = new Label();
+        _lblStock = new Label();
+        _lblStockMinimo = new Label();
+        _lblEstado = new Label();
         _headerPanel.SuspendLayout();
         _formContainer.SuspendLayout();
         _formLayout.SuspendLayout();
@@ -91,22 +115,22 @@ public partial class FrmProductos
         _formContainer.Location = new Point(14, 96);
         _formContainer.Name = "_formContainer";
         _formContainer.Padding = new Padding(12);
-        _formContainer.Size = new Size(832, 170);
+        _formContainer.Size = new Size(832, 200);
         _formContainer.TabIndex = 1;
-        // 
+        //
         // _formLayout
-        // 
+        //
         _formLayout.BackColor = Color.White;
         _formLayout.ColumnCount = 3;
         _formLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F));
         _formLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 34F));
         _formLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 33F));
-        _formLayout.Controls.Add(_txtCodigo, 0, 0);
-        _formLayout.Controls.Add(_txtNombre, 1, 0);
-        _formLayout.Controls.Add(_numPrecio, 2, 0);
-        _formLayout.Controls.Add(_numStock, 0, 1);
-        _formLayout.Controls.Add(_numStockMinimo, 1, 1);
-        _formLayout.Controls.Add(_chkActivo, 2, 1);
+        _formLayout.Controls.Add(_codigoPanel, 0, 0);
+        _formLayout.Controls.Add(_nombrePanel, 1, 0);
+        _formLayout.Controls.Add(_precioPanel, 2, 0);
+        _formLayout.Controls.Add(_stockPanel, 0, 1);
+        _formLayout.Controls.Add(_stockMinPanel, 1, 1);
+        _formLayout.Controls.Add(_estadoPanel, 2, 1);
         _formLayout.Controls.Add(_btnGuardar, 0, 2);
         _formLayout.Controls.Add(_btnEliminar, 1, 2);
         _formLayout.Dock = DockStyle.Fill;
@@ -115,89 +139,179 @@ public partial class FrmProductos
         _formLayout.Name = "_formLayout";
         _formLayout.Padding = new Padding(4);
         _formLayout.RowCount = 3;
-        _formLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 33F));
-        _formLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 33F));
-        _formLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 34F));
-        _formLayout.Size = new Size(808, 146);
+        _formLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 70F));
+        _formLayout.RowStyles.Add(new RowStyle(SizeType.Absolute, 70F));
+        _formLayout.RowStyles.Add(new RowStyle(SizeType.Percent, 100F));
+        _formLayout.Size = new Size(808, 176);
         _formLayout.TabIndex = 0;
-        // 
+        //
+        // _codigoPanel
+        //
+        _codigoPanel.Dock = DockStyle.Fill;
+        _codigoPanel.Margin = new Padding(8, 6, 8, 6);
+        _codigoPanel.Controls.Add(_txtCodigo);
+        _codigoPanel.Controls.Add(_lblCodigo);
+        //
+        // _lblCodigo
+        //
+        _lblCodigo.AutoSize = true;
+        _lblCodigo.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+        _lblCodigo.ForeColor = Color.FromArgb(96, 125, 139);
+        _lblCodigo.Location = new Point(0, 0);
+        _lblCodigo.Text = "Código";
+        //
         // _txtCodigo
-        // 
+        //
         _txtCodigo.BorderStyle = BorderStyle.FixedSingle;
-        _txtCodigo.Dock = DockStyle.Fill;
-        _txtCodigo.Location = new Point(12, 10);
-        _txtCodigo.Margin = new Padding(8, 6, 8, 6);
+        _txtCodigo.Dock = DockStyle.Bottom;
+        _txtCodigo.Location = new Point(0, 26);
+        _txtCodigo.Margin = new Padding(0, 6, 0, 0);
         _txtCodigo.Name = "_txtCodigo";
-        _txtCodigo.PlaceholderText = "Código";
-        _txtCodigo.Size = new Size(248, 30);
+        _txtCodigo.PlaceholderText = "Ej. SKU-001";
+        _txtCodigo.Size = new Size(232, 30);
         _txtCodigo.TabIndex = 0;
-        // 
+        //
+        // _nombrePanel
+        //
+        _nombrePanel.Dock = DockStyle.Fill;
+        _nombrePanel.Margin = new Padding(8, 6, 8, 6);
+        _nombrePanel.Controls.Add(_txtNombre);
+        _nombrePanel.Controls.Add(_lblNombre);
+        //
+        // _lblNombre
+        //
+        _lblNombre.AutoSize = true;
+        _lblNombre.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+        _lblNombre.ForeColor = Color.FromArgb(96, 125, 139);
+        _lblNombre.Location = new Point(0, 0);
+        _lblNombre.Text = "Nombre";
+        //
         // _txtNombre
-        // 
+        //
         _txtNombre.BorderStyle = BorderStyle.FixedSingle;
-        _txtNombre.Dock = DockStyle.Fill;
-        _txtNombre.Location = new Point(276, 10);
-        _txtNombre.Margin = new Padding(8, 6, 8, 6);
+        _txtNombre.Dock = DockStyle.Bottom;
+        _txtNombre.Location = new Point(0, 26);
+        _txtNombre.Margin = new Padding(0, 6, 0, 0);
         _txtNombre.Name = "_txtNombre";
-        _txtNombre.PlaceholderText = "Nombre";
-        _txtNombre.Size = new Size(256, 30);
+        _txtNombre.PlaceholderText = "Ej. Helado artesanal";
+        _txtNombre.Size = new Size(240, 30);
         _txtNombre.TabIndex = 1;
-        // 
+        //
+        // _precioPanel
+        //
+        _precioPanel.Dock = DockStyle.Fill;
+        _precioPanel.Margin = new Padding(8, 6, 8, 6);
+        _precioPanel.Controls.Add(_numPrecio);
+        _precioPanel.Controls.Add(_lblPrecio);
+        //
+        // _lblPrecio
+        //
+        _lblPrecio.AutoSize = true;
+        _lblPrecio.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+        _lblPrecio.ForeColor = Color.FromArgb(96, 125, 139);
+        _lblPrecio.Location = new Point(0, 0);
+        _lblPrecio.Text = "Precio unitario";
+        //
         // _numPrecio
-        // 
+        //
         _numPrecio.BorderStyle = BorderStyle.FixedSingle;
         _numPrecio.DecimalPlaces = 2;
-        _numPrecio.Dock = DockStyle.Fill;
-        _numPrecio.Location = new Point(548, 10);
-        _numPrecio.Margin = new Padding(8, 6, 8, 6);
+        _numPrecio.Dock = DockStyle.Bottom;
+        _numPrecio.Location = new Point(0, 26);
+        _numPrecio.Margin = new Padding(0, 6, 0, 0);
         _numPrecio.Maximum = new decimal(new int[] { 100000, 0, 0, 0 });
         _numPrecio.Name = "_numPrecio";
-        _numPrecio.Size = new Size(248, 30);
+        _numPrecio.Size = new Size(232, 30);
         _numPrecio.TabIndex = 2;
-        // 
+        //
+        // _stockPanel
+        //
+        _stockPanel.Dock = DockStyle.Fill;
+        _stockPanel.Margin = new Padding(8, 6, 8, 6);
+        _stockPanel.Controls.Add(_numStock);
+        _stockPanel.Controls.Add(_lblStock);
+        //
+        // _lblStock
+        //
+        _lblStock.AutoSize = true;
+        _lblStock.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+        _lblStock.ForeColor = Color.FromArgb(96, 125, 139);
+        _lblStock.Location = new Point(0, 0);
+        _lblStock.Text = "Stock actual";
+        //
         // _numStock
-        // 
+        //
         _numStock.BorderStyle = BorderStyle.FixedSingle;
-        _numStock.Dock = DockStyle.Fill;
-        _numStock.Location = new Point(12, 55);
-        _numStock.Margin = new Padding(8, 6, 8, 6);
+        _numStock.Dock = DockStyle.Bottom;
+        _numStock.Location = new Point(0, 26);
+        _numStock.Margin = new Padding(0, 6, 0, 0);
         _numStock.Maximum = new decimal(new int[] { 100000, 0, 0, 0 });
         _numStock.Name = "_numStock";
-        _numStock.Size = new Size(248, 30);
+        _numStock.Size = new Size(232, 30);
         _numStock.TabIndex = 3;
-        // 
+        //
+        // _stockMinPanel
+        //
+        _stockMinPanel.Dock = DockStyle.Fill;
+        _stockMinPanel.Margin = new Padding(8, 6, 8, 6);
+        _stockMinPanel.Controls.Add(_numStockMinimo);
+        _stockMinPanel.Controls.Add(_lblStockMinimo);
+        //
+        // _lblStockMinimo
+        //
+        _lblStockMinimo.AutoSize = true;
+        _lblStockMinimo.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+        _lblStockMinimo.ForeColor = Color.FromArgb(96, 125, 139);
+        _lblStockMinimo.Location = new Point(0, 0);
+        _lblStockMinimo.Text = "Stock mínimo";
+        //
         // _numStockMinimo
-        // 
+        //
         _numStockMinimo.BorderStyle = BorderStyle.FixedSingle;
-        _numStockMinimo.Dock = DockStyle.Fill;
-        _numStockMinimo.Location = new Point(276, 55);
-        _numStockMinimo.Margin = new Padding(8, 6, 8, 6);
+        _numStockMinimo.Dock = DockStyle.Bottom;
+        _numStockMinimo.Location = new Point(0, 26);
+        _numStockMinimo.Margin = new Padding(0, 6, 0, 0);
         _numStockMinimo.Maximum = new decimal(new int[] { 100000, 0, 0, 0 });
         _numStockMinimo.Name = "_numStockMinimo";
-        _numStockMinimo.Size = new Size(256, 30);
+        _numStockMinimo.Size = new Size(240, 30);
         _numStockMinimo.TabIndex = 4;
-        // 
+        //
+        // _estadoPanel
+        //
+        _estadoPanel.Dock = DockStyle.Fill;
+        _estadoPanel.Margin = new Padding(8, 6, 8, 6);
+        _estadoPanel.Controls.Add(_chkActivo);
+        _estadoPanel.Controls.Add(_lblEstado);
+        //
+        // _lblEstado
+        //
+        _lblEstado.AutoSize = true;
+        _lblEstado.Font = new Font("Segoe UI", 9F, FontStyle.Regular, GraphicsUnit.Point);
+        _lblEstado.ForeColor = Color.FromArgb(96, 125, 139);
+        _lblEstado.Location = new Point(0, 0);
+        _lblEstado.Text = "Estado";
+        //
         // _chkActivo
-        // 
+        //
         _chkActivo.Checked = true;
         _chkActivo.CheckState = CheckState.Checked;
-        _chkActivo.Dock = DockStyle.Left;
-        _chkActivo.Location = new Point(543, 52);
+        _chkActivo.Dock = DockStyle.Bottom;
+        _chkActivo.Location = new Point(0, 22);
         _chkActivo.Name = "_chkActivo";
-        _chkActivo.Padding = new Padding(6);
-        _chkActivo.Size = new Size(104, 39);
+        _chkActivo.Padding = new Padding(6, 10, 6, 6);
+        _chkActivo.Size = new Size(232, 44);
         _chkActivo.TabIndex = 5;
         _chkActivo.Text = "Activo";
-        // 
+        //
         // _btnGuardar
-        // 
+        //
         _btnGuardar.AutoSize = true;
         _btnGuardar.BackColor = Color.FromArgb(23, 58, 94);
         _btnGuardar.FlatAppearance.BorderSize = 0;
         _btnGuardar.FlatStyle = FlatStyle.Flat;
         _btnGuardar.ForeColor = Color.White;
-        _btnGuardar.Location = new Point(12, 104);
-        _btnGuardar.Margin = new Padding(8, 10, 8, 6);
+        _btnGuardar.Location = new Point(12, 114);
+        _btnGuardar.Margin = new Padding(8, 14, 8, 6);
         _btnGuardar.Name = "_btnGuardar";
         _btnGuardar.Padding = new Padding(14, 8, 14, 8);
         _btnGuardar.Size = new Size(185, 32);

@@ -1,5 +1,3 @@
-using ShopSmart.Core.Models;
-using ShopSmart.Data;
 using System.Windows.Forms;
 
 namespace ShopSmart.UI;
@@ -18,30 +16,14 @@ public partial class FrmPrincipal
     private Label _subtitleLabel = null!;
     private TextBox _searchBox = null!;
     private Button _btnSearch = null!;
+    private Button _btnCambiarRol = null!;
+    private Button _btnLogout = null!;
+    private TableLayoutPanel _headerLayout = null!;
+    private FlowLayoutPanel _actionsPanel = null!;
     private StatusStrip _statusStrip = null!;
     private ToolStripStatusLabel _statusLabel = null!;
     private ToolStripStatusLabel _dbStatusLabel = null!;
     private FlowLayoutPanel _cardsPanel = null!;
-
-    public FrmPrincipal(Usuario usuario, BDConexion conexion)
-    {
-        _usuario = usuario;
-        _conexion = conexion;
-
-        InitializeComponent();
-
-        StartPosition = FormStartPosition.CenterScreen;
-        WindowState = FormWindowState.Maximized;
-
-        Text = $"ShopSmart - Panel principal ({_usuario.NombreUsuario})";
-
-        ConstruirDashboard();
-    }
-
-    private void ConstruirDashboard()
-    {
-        throw new NotImplementedException();
-    }
 
     private void InitializeComponent()
     {
@@ -52,14 +34,18 @@ public partial class FrmPrincipal
         _proveedoresItem = new ToolStripMenuItem();
         _reportesItem = new ToolStripMenuItem();
         _headerPanel = new Panel();
+        _headerLayout = new TableLayoutPanel();
+        _actionsPanel = new FlowLayoutPanel();
         _searchBox = new TextBox();
         _btnSearch = new Button();
+        _btnCambiarRol = new Button();
         _welcomeLabel = new Label();
         _subtitleLabel = new Label();
         _cardsPanel = new FlowLayoutPanel();
         _statusStrip = new StatusStrip();
         _statusLabel = new ToolStripStatusLabel();
         _dbStatusLabel = new ToolStripStatusLabel();
+        _btnLogout = new Button();
         SuspendLayout();
         //
         // _menuStrip
@@ -91,52 +77,108 @@ public partial class FrmPrincipal
         _clientesItem.Name = "_clientesItem";
         _clientesItem.Size = new System.Drawing.Size(79, 26);
         _clientesItem.Text = "Clientes";
-        _clientesItem.Click += (_, _) => new FrmClientes().ShowDialog();
+        _clientesItem.Click += (_, _) => AbrirClientes();
         //
         // _proveedoresItem
         //
         _proveedoresItem.Name = "_proveedoresItem";
         _proveedoresItem.Size = new System.Drawing.Size(105, 26);
         _proveedoresItem.Text = "Proveedores";
-        _proveedoresItem.Click += (_, _) => new FrmProveedores().ShowDialog();
+        _proveedoresItem.Click += (_, _) => AbrirProveedores();
         //
         // _reportesItem
         //
         _reportesItem.Name = "_reportesItem";
         _reportesItem.Size = new System.Drawing.Size(82, 26);
         _reportesItem.Text = "Reportes";
-        _reportesItem.DropDownItems.Add("Ventas diarias (TODO)");
-        _reportesItem.DropDownItems.Add("Stock bajo (TODO)");
-        _reportesItem.DropDownItems.Add("Productos más vendidos (TODO)");
+        _reportesItem.Click += (_, _) => AbrirReportes();
         //
         // _headerPanel
         //
         _headerPanel.BackColor = System.Drawing.Color.White;
-        _headerPanel.Controls.Add(_welcomeLabel);
-        _headerPanel.Controls.Add(_subtitleLabel);
-        _headerPanel.Controls.Add(_searchBox);
-        _headerPanel.Controls.Add(_btnSearch);
+        _headerPanel.Controls.Add(_headerLayout);
         _headerPanel.Dock = DockStyle.Top;
         _headerPanel.Height = 120;
-        _headerPanel.Padding = new Padding(20, 18, 20, 16);
+        _headerPanel.Padding = new Padding(16, 14, 16, 12);
+
+        //
+        // _headerLayout
+        //
+        _headerLayout.ColumnCount = 2;
+        _headerLayout.RowCount = 2;
+        _headerLayout.Dock = DockStyle.Fill;
+        _headerLayout.BackColor = System.Drawing.Color.White;
+        _headerLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 55F));
+        _headerLayout.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 45F));
+        _headerLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        _headerLayout.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+        _headerLayout.Controls.Add(_welcomeLabel, 0, 0);
+        _headerLayout.Controls.Add(_subtitleLabel, 0, 1);
+        _headerLayout.Controls.Add(_actionsPanel, 1, 0);
+        _headerLayout.SetRowSpan(_actionsPanel, 2);
+
+        //
+        // _actionsPanel
+        //
+        _actionsPanel.FlowDirection = FlowDirection.LeftToRight;
+        _actionsPanel.WrapContents = false;
+        _actionsPanel.Dock = DockStyle.Fill;
+        _actionsPanel.AutoSize = true;
+        _actionsPanel.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+        _actionsPanel.Padding = new Padding(0, 8, 0, 0);
+        _actionsPanel.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        _actionsPanel.Controls.Add(_searchBox);
+        _actionsPanel.Controls.Add(_btnSearch);
+        _actionsPanel.Controls.Add(_btnCambiarRol);
+        _actionsPanel.Controls.Add(_btnLogout);
         //
         // _searchBox
         //
-        _searchBox.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        _searchBox.Location = new System.Drawing.Point(600, 22);
-        _searchBox.Size = new System.Drawing.Size(200, 28);
-        _searchBox.PlaceholderText = "Buscar productos, clientes...";
+        _searchBox.Width = 220;
+        _searchBox.PlaceholderText = "Buscar productos, clientes o reportes";
+        _searchBox.BorderStyle = BorderStyle.FixedSingle;
+        _searchBox.Margin = new Padding(0, 0, 10, 0);
         //
         // _btnSearch
         //
-        _btnSearch.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        _btnSearch.Location = new System.Drawing.Point(808, 20);
-        _btnSearch.Size = new System.Drawing.Size(70, 32);
+        _btnSearch.AutoSize = true;
+        _btnSearch.AutoSizeMode = AutoSizeMode.GrowAndShrink;
         _btnSearch.Text = "Buscar";
         _btnSearch.BackColor = System.Drawing.Color.FromArgb(23, 58, 94);
         _btnSearch.ForeColor = System.Drawing.Color.White;
         _btnSearch.FlatStyle = FlatStyle.Flat;
         _btnSearch.FlatAppearance.BorderSize = 0;
+        _btnSearch.Cursor = Cursors.Hand;
+        _btnSearch.Margin = new Padding(0, 0, 10, 0);
+        _btnSearch.Padding = new Padding(12, 8, 12, 8);
+
+        //
+        // _btnCambiarRol
+        //
+        _btnCambiarRol.AutoSize = true;
+        _btnCambiarRol.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+        _btnCambiarRol.Text = "Cambiar rol";
+        _btnCambiarRol.BackColor = System.Drawing.Color.FromArgb(255, 193, 7);
+        _btnCambiarRol.ForeColor = System.Drawing.Color.FromArgb(33, 33, 33);
+        _btnCambiarRol.FlatStyle = FlatStyle.Flat;
+        _btnCambiarRol.FlatAppearance.BorderSize = 0;
+        _btnCambiarRol.Cursor = Cursors.Hand;
+        _btnCambiarRol.Margin = new Padding(0, 0, 10, 0);
+        _btnCambiarRol.Padding = new Padding(12, 8, 12, 8);
+        _btnCambiarRol.Click += (_, _) => CambiarRol();
+        //
+        // _btnLogout
+        //
+        _btnLogout.AutoSize = true;
+        _btnLogout.AutoSizeMode = AutoSizeMode.GrowAndShrink;
+        _btnLogout.Text = "Salir";
+        _btnLogout.BackColor = System.Drawing.Color.FromArgb(220, 53, 69);
+        _btnLogout.ForeColor = System.Drawing.Color.White;
+        _btnLogout.FlatStyle = FlatStyle.Flat;
+        _btnLogout.FlatAppearance.BorderSize = 0;
+        _btnLogout.Cursor = Cursors.Hand;
+        _btnLogout.Padding = new Padding(12, 8, 12, 8);
+        _btnLogout.Click += (_, _) => CerrarSesion();
         // _welcomeLabel
         //
         _welcomeLabel.AutoSize = true;

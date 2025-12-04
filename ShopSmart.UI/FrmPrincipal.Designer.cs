@@ -1,5 +1,3 @@
-using ShopSmart.Core.Models;
-using ShopSmart.Data;
 using System.Windows.Forms;
 
 namespace ShopSmart.UI;
@@ -18,30 +16,11 @@ public partial class FrmPrincipal
     private Label _subtitleLabel = null!;
     private TextBox _searchBox = null!;
     private Button _btnSearch = null!;
+    private Button _btnLogout = null!;
     private StatusStrip _statusStrip = null!;
     private ToolStripStatusLabel _statusLabel = null!;
     private ToolStripStatusLabel _dbStatusLabel = null!;
     private FlowLayoutPanel _cardsPanel = null!;
-
-    public FrmPrincipal(Usuario usuario, BDConexion conexion)
-    {
-        _usuario = usuario;
-        _conexion = conexion;
-
-        InitializeComponent();
-
-        StartPosition = FormStartPosition.CenterScreen;
-        WindowState = FormWindowState.Maximized;
-
-        Text = $"ShopSmart - Panel principal ({_usuario.NombreUsuario})";
-
-        ConstruirDashboard();
-    }
-
-    private void ConstruirDashboard()
-    {
-        throw new NotImplementedException();
-    }
 
     private void InitializeComponent()
     {
@@ -60,6 +39,7 @@ public partial class FrmPrincipal
         _statusStrip = new StatusStrip();
         _statusLabel = new ToolStripStatusLabel();
         _dbStatusLabel = new ToolStripStatusLabel();
+        _btnLogout = new Button();
         SuspendLayout();
         //
         // _menuStrip
@@ -91,23 +71,21 @@ public partial class FrmPrincipal
         _clientesItem.Name = "_clientesItem";
         _clientesItem.Size = new System.Drawing.Size(79, 26);
         _clientesItem.Text = "Clientes";
-        _clientesItem.Click += (_, _) => new FrmClientes().ShowDialog();
+        _clientesItem.Click += (_, _) => AbrirClientes();
         //
         // _proveedoresItem
         //
         _proveedoresItem.Name = "_proveedoresItem";
         _proveedoresItem.Size = new System.Drawing.Size(105, 26);
         _proveedoresItem.Text = "Proveedores";
-        _proveedoresItem.Click += (_, _) => new FrmProveedores().ShowDialog();
+        _proveedoresItem.Click += (_, _) => AbrirProveedores();
         //
         // _reportesItem
         //
         _reportesItem.Name = "_reportesItem";
         _reportesItem.Size = new System.Drawing.Size(82, 26);
         _reportesItem.Text = "Reportes";
-        _reportesItem.DropDownItems.Add("Ventas diarias (TODO)");
-        _reportesItem.DropDownItems.Add("Stock bajo (TODO)");
-        _reportesItem.DropDownItems.Add("Productos más vendidos (TODO)");
+        _reportesItem.Click += (_, _) => AbrirReportes();
         //
         // _headerPanel
         //
@@ -116,6 +94,7 @@ public partial class FrmPrincipal
         _headerPanel.Controls.Add(_subtitleLabel);
         _headerPanel.Controls.Add(_searchBox);
         _headerPanel.Controls.Add(_btnSearch);
+        _headerPanel.Controls.Add(_btnLogout);
         _headerPanel.Dock = DockStyle.Top;
         _headerPanel.Height = 120;
         _headerPanel.Padding = new Padding(20, 18, 20, 16);
@@ -123,20 +102,35 @@ public partial class FrmPrincipal
         // _searchBox
         //
         _searchBox.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        _searchBox.Location = new System.Drawing.Point(600, 22);
-        _searchBox.Size = new System.Drawing.Size(200, 28);
-        _searchBox.PlaceholderText = "Buscar productos, clientes...";
+        _searchBox.Location = new System.Drawing.Point(480, 22);
+        _searchBox.Size = new System.Drawing.Size(224, 32);
+        _searchBox.PlaceholderText = "Buscar productos, clientes o reportes";
+        _searchBox.BorderStyle = BorderStyle.FixedSingle;
         //
         // _btnSearch
         //
         _btnSearch.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-        _btnSearch.Location = new System.Drawing.Point(808, 20);
-        _btnSearch.Size = new System.Drawing.Size(70, 32);
+        _btnSearch.Location = new System.Drawing.Point(712, 20);
+        _btnSearch.Size = new System.Drawing.Size(82, 36);
         _btnSearch.Text = "Buscar";
         _btnSearch.BackColor = System.Drawing.Color.FromArgb(23, 58, 94);
         _btnSearch.ForeColor = System.Drawing.Color.White;
         _btnSearch.FlatStyle = FlatStyle.Flat;
         _btnSearch.FlatAppearance.BorderSize = 0;
+        _btnSearch.Cursor = Cursors.Hand;
+        //
+        // _btnLogout
+        //
+        _btnLogout.Anchor = AnchorStyles.Top | AnchorStyles.Right;
+        _btnLogout.Location = new System.Drawing.Point(800, 20);
+        _btnLogout.Size = new System.Drawing.Size(90, 36);
+        _btnLogout.Text = "Salir";
+        _btnLogout.BackColor = System.Drawing.Color.FromArgb(220, 53, 69);
+        _btnLogout.ForeColor = System.Drawing.Color.White;
+        _btnLogout.FlatStyle = FlatStyle.Flat;
+        _btnLogout.FlatAppearance.BorderSize = 0;
+        _btnLogout.Cursor = Cursors.Hand;
+        _btnLogout.Click += (_, _) => CerrarSesion();
         // _welcomeLabel
         //
         _welcomeLabel.AutoSize = true;

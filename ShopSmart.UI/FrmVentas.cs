@@ -29,6 +29,7 @@ public partial class FrmVentas : Form
         _btnBuscar.Click += (_, _) => BuscarProducto();
         _btnAgregar.Click += (_, _) => AgregarAlCarrito();
         _btnGuardar.Click += (_, _) => GuardarVenta();
+        _btnQuitar.Click += (_, _) => QuitarSeleccionado();
 
         CargarCatalogos();
         RefrescarCarrito();
@@ -75,52 +76,48 @@ public partial class FrmVentas : Form
             return;
         }
 
-        var detalle = new DetalleVenta
+        var cantidad = (int)_numCantidad.Value;
+        var detalles = ObtenerCarrito();
+        var existente = detalles.FirstOrDefault(d => d.Producto.Codigo.Equals(producto.Codigo, StringComparison.OrdinalIgnoreCase));
+        if (existente is not null)
         {
-            Producto = producto,
-            Cantidad = 1,
-            PrecioUnitario = producto.Precio,
-            Subtotal = producto.Precio
-        };
+            existente.Cantidad += cantidad;
+            existente.Subtotal = existente.Cantidad * existente.PrecioUnitario;
+        }
+        else
+        {
+            detalles.Add(new DetalleVenta
+            {
+                Producto = producto,
+                Cantidad = cantidad,
+                PrecioUnitario = producto.Precio,
+                Subtotal = producto.Precio * cantidad
+            });
+        }
 
-        _carrito.Enqueue(detalle);
+        ReemplazarCarrito(detalles);
+        _txtBuscar.Clear();
+        _numCantidad.Value = 1;
         RefrescarCarrito();
     }
 
     private void RefrescarCarrito()
     {
-        var detalles = new List<DetalleVenta>();
-        var temporal = new QueueCustom<DetalleVenta>();
+        var detalles = ObtenerCarrito();
+        var vista = detalles
+            .Select(d => new
+            {
+                d.Producto.Codigo,
+                Producto = d.Producto.Nombre,
+                d.Cantidad,
+                Precio = d.PrecioUnitario,
+                d.Subtotal
+            })
+            .ToList();
 
-        while (true)
-        {
-            try
-            {
-                var item = _carrito.Dequeue();
-                detalles.Add(item);
-                temporal.Enqueue(item);
-            }
-            catch
-            {
-                break;
-            }
-        }
-
-        while (true)
-        {
-            try
-            {
-                _carrito.Enqueue(temporal.Dequeue());
-            }
-            catch
-            {
-                break;
-            }
-        }
-
-        _grid.DataSource = detalles.ToList();
+        _grid.DataSource = vista;
         var total = detalles.Sum(d => d.Subtotal);
-        _lblTotal.Text = $"Total: ${total}";
+        _lblTotal.Text = $"Total: ${total:N2}";
     }
 
     private void GuardarVenta()
@@ -174,6 +171,80 @@ public partial class FrmVentas : Form
         catch (Exception ex)
         {
             MessageBox.Show($"No se pudo guardar la venta: {ex.Message}", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+        }
+    }
+
+    private void QuitarSeleccionado()
+    {
+        if (_grid.SelectedRows.Count == 0)
+        {
+            MessageBox.Show("Seleccione un producto para quitar", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return;
+        }
+
+        var codigo = _grid.SelectedRows[0].Cells["Codigo"].Value?.ToString();
+        if (string.IsNullOrWhiteSpace(codigo))
+        {
+            return;
+        }
+
+        var detalles = ObtenerCarrito();
+        var restante = detalles.Where(d => !d.Producto.Codigo.Equals(codigo, StringComparison.OrdinalIgnoreCase)).ToList();
+        ReemplazarCarrito(restante);
+        RefrescarCarrito();
+    }
+
+    private List<DetalleVenta> ObtenerCarrito()
+    {
+        var detalles = new List<DetalleVenta>();
+        var temporal = new QueueCustom<DetalleVenta>();
+
+        while (true)
+        {
+            try
+            {
+                var item = _carrito.Dequeue();
+                detalles.Add(item);
+                temporal.Enqueue(item);
+            }
+            catch
+            {
+                break;
+            }
+        }
+
+        while (true)
+        {
+            try
+            {
+                _carrito.Enqueue(temporal.Dequeue());
+            }
+            catch
+            {
+                break;
+            }
+        }
+
+        return detalles;
+    }
+
+    private void ReemplazarCarrito(IEnumerable<DetalleVenta> detalles)
+    {
+        while (true)
+        {
+            try
+            {
+                _carrito.Dequeue();
+            }
+            catch
+            {
+                break;
+            }
+        }
+
+        foreach (var detalle in detalles)
+        {
+            _carrito.Enqueue(detalle);
         }
     }
 }

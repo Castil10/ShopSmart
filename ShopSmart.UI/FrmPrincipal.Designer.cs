@@ -37,6 +37,7 @@ public partial class FrmPrincipal
         _actionsPanel = new FlowLayoutPanel();
         _searchBox = new TextBox();
         _btnSearch = new Button();
+        _btnCambiarRol = new Button();
         _welcomeLabel = new Label();
         _subtitleLabel = new Label();
         _cardsPanel = new FlowLayoutPanel();
